@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VirtualChem 10 - Thí Nghiệm Hóa Học Ảo Tương Tác</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for real-time sensor graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Canvas Confetti for rewards -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+        }
+        .glow-amber {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+        }
+        .draggable-item {
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- HEADER -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-slate-700/60 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg text-xl font-bold">
+                    <i class="fa-solid font-flask">🧪</i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold bg-gradient-to-r from-cyan-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">
+                        VirtualChem 10
+                    </h1>
+                    <p class="text-xs text-slate-400">Phòng Thí Nghiệm Hóa Học Ảo - THPT Lương Thế Vinh</p>
+                </div>
+            </div>
+
+            <!-- TAB NAVIGATION -->
+            <nav class="flex items-center bg-slate-900/80 p-1.5 rounded-xl border border-slate-800 space-x-1 text-sm font-medium">
+                <button id="nav-exp1" onclick="switchTab('exp1')" class="px-4 py-2 rounded-lg transition-all text-cyan-400 bg-slate-800 shadow flex items-center gap-2">
+                    <i class="fa-solid fa-atom"></i>
+                    <span>TN 1: Tính Kim Loại</span>
+                </button>
+                <button id="nav-exp2" onclick="switchTab('exp2')" class="px-4 py-2 rounded-lg transition-all text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                    <span>TN 2: Tính Phi Kim</span>
+                </button>
+                <button id="nav-quiz" onclick="switchTab('quiz')" class="px-4 py-2 rounded-lg transition-all text-slate-400 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-award"></i>
+                    <span>Củng Cố & Kéo Thả</span>
+                </button>
+            </nav>
+
+            <!-- SOUND & AUDIO CONTROLS -->
+            <div class="flex items-center space-x-2">
+                <button id="audio-toggle" onclick="toggleAudio()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Bật/Tắt âm thanh mô phỏng">
+                    <i id="audio-icon" class="fa-solid fa-volume-high text-cyan-400"></i>
+                </button>
+                <button onclick="resetCurrentTab()" class="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Làm mới thí nghiệm">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="max-w-7xl mx-auto w-full px-4 py-6 flex-1">
+
+        <!-- ==================== TAB 1: SO SÁNH TÍNH KIM LOẠI (Na, Mg, Al) ==================== -->
+        <section id="tab-exp1" class="space-y-6">
+            <!-- HEADER INFO -->
+            <div class="glass-panel p-4 rounded-2xl border-l-4 border-cyan-500 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span class="text-xs uppercase font-bold tracking-wider text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-md border border-cyan-800/50">Chủ đề 1</span>
+                    <h2 class="text-xl font-bold mt-1 text-white">So Sánh Tính Kim Loại Của Sodium (Na), Magnesium (Mg) Và Nhôm (Al)</h2>
+                    <p class="text-sm text-slate-300 mt-0.5">Khảo sát quy luật biến đổi tính kim loại trong Chu kỳ 3 khi tác dụng với H₂O / Phenolphthalein.</p>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-slate-400 bg-slate-900/60 px-3 py-2 rounded-xl">
+                    <i class="fa-solid fa-circle-info text-cyan-400"></i>
+                    <span>Kéo thả hoặc chọn mẫu kim loại vào cốc hóa chất</span>
+                </div>
+            </div>
+
+            <!-- EXPERIMENT WORKSPACE GRID -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- CONTROLS & CHEMICAL SHELF (4 COLS) -->
+                <div class="lg:col-span-4 space-y-5">
+                    <!-- CHEMICAL SELECTION CARD -->
+                    <div class="glass-panel p-5 rounded-2xl space-y-4">
+                        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-vial-circle-check text-cyan-400"></i> 1. Chọn Kim Loại
+                        </h3>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button onclick="selectMetal('Na')" id="btn-metal-Na" class="metal-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-cyan-500 transition text-center group">
+                                <div class="text-xl font-black text-amber-400 group-hover:scale-110 transition">Na</div>
+                                <div class="text-[10px] text-slate-400">Sodium</div>
+                                <div class="text-[10px] text-emerald-400 mt-1 font-semibold">Nhóm IA</div>
+                            </button>
+                            <button onclick="selectMetal('Mg')" id="btn-metal-Mg" class="metal-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-cyan-500 transition text-center group">
+                                <div class="text-xl font-black text-slate-300 group-hover:scale-110 transition">Mg</div>
+                                <div class="text-[10px] text-slate-400">Magnesium</div>
+                                <div class="text-[10px] text-cyan-400 mt-1 font-semibold">Nhóm IIA</div>
+                            </button>
+                            <button onclick="selectMetal('Al')" id="btn-metal-Al" class="metal-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-cyan-500 transition text-center group">
+                                <div class="text-xl font-black text-slate-400 group-hover:scale-110 transition">Al</div>
+                                <div class="text-[10px] text-slate-400">Nhôm</div>
+                                <div class="text-[10px] text-blue-400 mt-1 font-semibold">Nhóm IIIA</div>
+                            </button>
+                        </div>
+
+                        <!-- REAGENT SETTINGS -->
+                        <div class="pt-3 border-t border-slate-700/60 space-y-3">
+                            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-cyan-400"></i> 2. Điều Kiện Thí Nghiệm
+                            </h3>
+
+                            <!-- TEMPERATURE SLIDER -->
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Nhiệt độ dung dịch:</span>
+                                    <span id="temp-display" class="font-bold text-amber-400">25 °C</span>
+                                </div>
+                                <input type="range" id="temp-slider" min="25" max="100" value="25" step="5" oninput="updateTemperature(this.value)" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400">
+                                <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+                                    <span>25°C (Thường)</span>
+                                    <span>80°C (Nóng)</span>
+                                    <span>100°C (Sôi)</span>
+                                </div>
+                            </div>
+
+                            <!-- PHENOLPHTHALEIN TOGGLE -->
+                            <div class="flex items-center justify-between p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                                <span class="text-xs text-slate-300 flex items-center gap-2">
+                                    <i class="fa-solid fa-droplet text-pink-400"></i> Phenolphthalein chỉ thị
+                                </span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="indicator-toggle" checked onchange="toggleIndicator(this.checked)" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-500"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- ACTION BUTTONS -->
+                        <div class="pt-2 flex gap-2">
+                            <button onclick="startMetalExperiment()" id="btn-start-exp1" class="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 font-bold rounded-xl text-white text-sm shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-play"></i> Bắt Đầu Thả Kim Loại
+                            </button>
+                            <button onclick="stopMetalExperiment()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 text-sm font-semibold transition">
+                                <i class="fa-solid fa-pause"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- REAL-TIME H2 SENSOR GAUGE -->
+                    <div class="glass-panel p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                                <i class="fa-solid fa-gauge-high text-emerald-400"></i> Cảm Biến Khí H₂ Theo Thời Gian
+                            </h3>
+                            <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-mono">LIVE SENSOR</span>
+                        </div>
+                        <div class="h-44 w-full">
+                            <canvas id="chart-exp1"></canvas>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                            <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                                <div class="text-slate-400 text-[10px]">Thể tích H₂ sinh ra</div>
+                                <div id="sensor-vol" class="font-bold text-cyan-400 text-sm">0.00 mL</div>
+                            </div>
+                            <div class="bg-slate-900/60 p-2 rounded-lg border border-slate-800">
+                                <div class="text-slate-400 text-[10px]">Tốc độ phản ứng</div>
+                                <div id="sensor-rate" class="font-bold text-amber-400 text-sm">0.0 mL/s</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ANIMATED BEAKER CANVAS & OBSERVATION PANEL (8 COLS) -->
+                <div class="lg:col-span-8 space-y-5">
+                    <!-- CANVA BEAKER DISPLAY -->
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden min-h-[380px]">
+                        <!-- BACKGROUND METRICS / STATUS -->
+                        <div class="absolute top-4 left-4 text-xs font-mono text-slate-400 space-y-1">
+                            <div>Mẫu Thử: <span id="status-metal" class="font-bold text-cyan-400">Sodium (Na)</span></div>
+                            <div>Trạng Thái: <span id="status-rxn" class="text-amber-400 font-semibold">Chờ bắt đầu...</span></div>
+                        </div>
+
+                        <div class="absolute top-4 right-4 bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2">
+                            <span id="ph-indicator" class="w-3 h-3 rounded-full bg-slate-500"></span>
+                            <span>pH Dung Dịch: <strong id="ph-value" class="text-white">7.0</strong></span>
+                        </div>
+
+                        <!-- CANVAS SIMULATION -->
+                        <canvas id="beakerCanvas" width="480" height="320" class="max-w-full rounded-xl"></canvas>
+
+                        <!-- DYNAMIC PEDAGOGICAL POPUP NOTE -->
+                        <div id="pop-explanation" class="hidden absolute bottom-4 left-4 right-4 bg-slate-900/90 border border-cyan-500/50 p-3 rounded-xl backdrop-blur-md shadow-2xl animate-fade-in flex items-start gap-3">
+                            <i class="fa-solid fa-lightbulb text-amber-400 text-xl mt-0.5"></i>
+                            <div class="text-xs text-slate-200">
+                                <strong id="pop-title" class="text-cyan-400 text-sm block">Hiện Tượng Quan Sát:</strong>
+                                <p id="pop-text" class="mt-0.5">Mẩu Na nóng chảy thành viên tròn xoay nhanh trên mặt nước, có khí thoát ra mãnh liệt làm dung dịch chuyển sang màu hồng đậm.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- EQUATIONS AND SCIENTIFIC EXPLANATION -->
+                    <div class="glass-panel p-5 rounded-2xl space-y-3">
+                        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-square-root-variable text-cyan-400"></i> Phương Trình & Bản Chất Hóa Học
+                        </h3>
+                        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+                            <div class="text-xs text-slate-400">Phương trình hóa học xảy ra:</div>
+                            <div id="equation-exp1" class="text-base font-mono text-emerald-400 font-bold tracking-wide">
+                                2Na + 2H₂O → 2NaOH + H₂↑
+                            </div>
+                            <p id="detail-exp1" class="text-xs text-slate-300 leading-relaxed border-t border-slate-800 pt-2 mt-2">
+                                Sodium phản ứng rất mãnh liệt với nước ở nhiệt độ thường tỏa nhiều nhiệt. NaOH sinh ra làm Phenolphthalein chuyển sang màu hồng.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: SO SÁNH TÍNH PHI KIM (Cl2, Br2, I2) ==================== -->
+        <section id="tab-exp2" class="hidden space-y-6">
+            <!-- HEADER INFO -->
+            <div class="glass-panel p-4 rounded-2xl border-l-4 border-amber-500 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span class="text-xs uppercase font-bold tracking-wider text-amber-400 bg-amber-950/60 px-2.5 py-1 rounded-md border border-amber-800/50">Chủ đề 2</span>
+                    <h2 class="text-xl font-bold mt-1 text-white">So Sánh Tính Phi Kim Của Các Halogen (Cl₂, Br₂, I₂)</h2>
+                    <p class="text-sm text-slate-300 mt-0.5">Khảo sát phản ứng thế Halogen & phản ứng với Hydro để xác định quy luật giảm dần tính phi kim.</p>
+                </div>
+                <!-- SUB-EXPERIMENT SWITCHER -->
+                <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+                    <button id="subtab-displacement" onclick="switchNonMetalSubTab('displacement')" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold transition">
+                        Phản Ứng Thế Halogen
+                    </button>
+                    <button id="subtab-hydrogen" onclick="switchNonMetalSubTab('hydrogen')" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">
+                        Phản Ứng Với H₂
+                    </button>
+                </div>
+            </div>
+
+            <!-- SUB-EXPERIMENT 2A: DISPLACEMENT REACTION -->
+            <div id="subview-displacement" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- LEFT PANEL CONTROLS -->
+                <div class="lg:col-span-4 space-y-5">
+                    <div class="glass-panel p-5 rounded-2xl space-y-4">
+                        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-flask-vial text-amber-400"></i> 1. Chọn Halogen Tự Do (Dung dịch)
+                        </h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="selectHalogen('Cl2')" id="btn-hal-Cl2" class="hal-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-amber-500 transition text-center">
+                                <div class="text-lg font-black text-amber-300">Cl₂</div>
+                                <div class="text-[10px] text-slate-400">Clo (vàng nhạt)</div>
+                            </button>
+                            <button onclick="selectHalogen('Br2')" id="btn-hal-Br2" class="hal-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-amber-500 transition text-center">
+                                <div class="text-lg font-black text-amber-600">Br₂</div>
+                                <div class="text-[10px] text-slate-400">Brom (vàng cam)</div>
+                            </button>
+                            <button onclick="selectHalogen('I2')" id="btn-hal-I2" class="hal-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-amber-500 transition text-center">
+                                <div class="text-lg font-black text-purple-400">I₂</div>
+                                <div class="text-[10px] text-slate-400">Iốt (nâu đỏ)</div>
+                            </button>
+                        </div>
+
+                        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2 pt-2 border-t border-slate-700/60">
+                            <i class="fa-solid fa-vial text-amber-400"></i> 2. Chọn Dung Dịch Muối Halogenid
+                        </h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="selectSalt('NaBr')" id="btn-salt-NaBr" class="salt-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-amber-500 transition text-center">
+                                <div class="text-base font-bold text-slate-200">NaBr</div>
+                                <div class="text-[10px] text-slate-400">Sodium bromide</div>
+                            </button>
+                            <button onclick="selectSalt('NaI')" id="btn-salt-NaI" class="salt-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-amber-500 transition text-center">
+                                <div class="text-base font-bold text-slate-200">NaI</div>
+                                <div class="text-[10px] text-slate-400">Sodium iodide</div>
+                            </button>
+                            <button onclick="selectSalt('NaCl')" id="btn-salt-NaCl" class="salt-btn p-3 rounded-xl border border-slate-700 bg-slate-800 hover:border-amber-500 transition text-center">
+                                <div class="text-base font-bold text-slate-200">NaCl</div>
+                                <div class="text-[10px] text-slate-400">Sodium chloride</div>
+                            </button>
+                        </div>
+
+                        <button onclick="runDisplacementExp()" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-slate-950 font-extrabold rounded-xl text-sm shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2 mt-4">
+                            <i class="fa-solid fa-vial-circle-check"></i> Trộn Hóa Chất Vừa Chọn
+                        </button>
+                    </div>
+
+                    <!-- REACTION RULES SUMMARY CARD -->
+                    <div class="glass-panel p-5 rounded-2xl space-y-2">
+                        <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider">Quy luật phản ứng thế:</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Phi kim mạnh hơn có khả năng đẩy phi kim yếu hơn ra khỏi dung dịch muối của nó:
+                        </p>
+                        <div class="text-xs font-mono text-emerald-400 bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                            X₂ + 2NaY → 2NaX + Y₂
+                            <br><span class="text-[10px] text-slate-400">(Vượt trội hơn khi tính phi kim X > Y)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL ANIMATED TEST TUBES -->
+                <div class="lg:col-span-8 space-y-5">
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center min-h-[380px] relative">
+                        <canvas id="displacementCanvas" width="500" height="320" class="max-w-full rounded-xl"></canvas>
+
+                        <div id="pop-exp2a" class="hidden absolute bottom-4 left-4 right-4 bg-slate-900/95 border border-amber-500/50 p-4 rounded-xl backdrop-blur-md shadow-2xl flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-400 text-2xl mt-0.5"></i>
+                            <div>
+                                <h4 id="exp2a-title" class="font-bold text-amber-400 text-sm">Kết quả phản ứng:</h4>
+                                <p id="exp2a-desc" class="text-xs text-slate-300 mt-1">Nước Clo đẩy Brom ra khỏi dung dịch NaBr tạo ra Brom tự do làm dung dịch hóa màu vàng cam.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 rounded-2xl space-y-2">
+                        <h3 class="text-sm font-bold text-slate-200">Phương Trình Hóa Học & Giải Thích:</h3>
+                        <div id="exp2a-eq" class="font-mono text-amber-300 text-base font-bold bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            Cl₂ + 2NaBr → 2NaCl + Br₂
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUB-EXPERIMENT 2B: REACTION WITH HYDROGEN -->
+            <div id="subview-hydrogen" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- CONTROLS -->
+                <div class="lg:col-span-4 space-y-5">
+                    <div class="glass-panel p-5 rounded-2xl space-y-4">
+                        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-atom text-cyan-400"></i> Chọn Halogen Tác Dụng Vô H₂
+                        </h3>
+                        <div class="space-y-2">
+                            <button onclick="selectH2Halogen('Cl2')" id="btn-h2-Cl2" class="h2-hal-btn w-full p-3 rounded-xl border border-slate-700 bg-slate-800 text-left flex items-center justify-between hover:border-cyan-400 transition">
+                                <div>
+                                    <div class="font-bold text-amber-300">Cl₂ + H₂</div>
+                                    <div class="text-[10px] text-slate-400">Ánh sáng / Nhiệt độ phòng</div>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded bg-red-950 text-red-400 border border-red-800">Phản ứng nổ</span>
+                            </button>
+
+                            <button onclick="selectH2Halogen('Br2')" id="btn-h2-Br2" class="h2-hal-btn w-full p-3 rounded-xl border border-slate-700 bg-slate-800 text-left flex items-center justify-between hover:border-cyan-400 transition">
+                                <div>
+                                    <div class="font-bold text-amber-600">Br₂ + H₂</div>
+                                    <div class="text-[10px] text-slate-400">Đun nóng 300 - 400°C</div>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800">Cần đun nóng</span>
+                            </button>
+
+                            <button onclick="selectH2Halogen('I2')" id="btn-h2-I2" class="h2-hal-btn w-full p-3 rounded-xl border border-slate-700 bg-slate-800 text-left flex items-center justify-between hover:border-cyan-400 transition">
+                                <div>
+                                    <div class="font-bold text-purple-400">I₂ + H₂</div>
+                                    <div class="text-[10px] text-slate-400">Đun nóng 350 - 500°C, xúc tác Pt</div>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded bg-purple-950 text-purple-300 border border-purple-800">Thuận nghịch ⇄</span>
+                            </button>
+                        </div>
+
+                        <button onclick="runH2Reaction()" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl text-sm shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-fire"></i> Kích Hoạt Phản Ứng
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ANIMATION -->
+                <div class="lg:col-span-8 space-y-5">
+                    <div class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center min-h-[380px] relative">
+                        <canvas id="h2Canvas" width="500" height="320" class="max-w-full rounded-xl"></canvas>
+                    </div>
+
+                    <div class="glass-panel p-5 rounded-2xl space-y-2">
+                        <h3 class="text-sm font-bold text-slate-200">Đặc Điểm Phản Ứng Với H₂:</h3>
+                        <div id="h2-eq-display" class="font-mono text-cyan-300 text-base font-bold bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            H₂ + Cl₂ ―(ánh sáng)→ 2HCl (Phản ứng nổ mạnh)
+                        </div>
+                        <p id="h2-desc-display" class="text-xs text-slate-300 leading-relaxed">
+                            Mức độ phản ứng với H₂ giảm dần từ Cl₂ đến I₂, chứng minh tính phi kim giảm dần: Cl > Br > I.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 3: CỦNG CỐ & BÀI TẬP KÉO THẢ ==================== -->
+        <section id="tab-quiz" class="hidden space-y-6">
+            <div class="glass-panel p-4 rounded-2xl border-l-4 border-emerald-500">
+                <span class="text-xs uppercase font-bold tracking-wider text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-md border border-emerald-800/50">Luyện tập & Đánh giá</span>
+                <h2 class="text-xl font-bold mt-1 text-white">Kiểm Tra Kiến Thức & Bài Tập Sắp Xếp Tương Tác</h2>
+                <p class="text-sm text-slate-300 mt-0.5">Kéo thả các thẻ nguyên tố/đơn chất vào vị trí theo chiều giảm dần tính chất hóa học.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- DRAG TASK 1: METALLIC TREND -->
+                <div class="glass-panel p-6 rounded-2xl space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-down-short-wide text-cyan-400"></i> Bài 1: Sắp xếp chiều GIẢM DẦN tính KIM LOẠI
+                        </h3>
+                        <span class="text-xs text-slate-400">Chu kỳ 3</span>
+                    </div>
+
+                    <!-- SOURCE CARDS -->
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-400 mb-2">Thẻ nguyên tố khả dụng (Bấm hoặc kéo thả):</div>
+                        <div id="metal-source" class="flex gap-3 justify-center min-h-[50px] items-center">
+                            <div draggable="true" ondragstart="drag(event)" id="card-Mg" onclick="moveCard('card-Mg')" class="draggable-item px-4 py-2 bg-slate-800 border-2 border-cyan-500/50 rounded-xl font-bold text-cyan-300 text-sm shadow-md hover:scale-105 transition">
+                                Magnesium (Mg)
+                            </div>
+                            <div draggable="true" ondragstart="drag(event)" id="card-Al" onclick="moveCard('card-Al')" class="draggable-item px-4 py-2 bg-slate-800 border-2 border-cyan-500/50 rounded-xl font-bold text-cyan-300 text-sm shadow-md hover:scale-105 transition">
+                                Nhôm (Al)
+                            </div>
+                            <div draggable="true" ondragstart="drag(event)" id="card-Na" onclick="moveCard('card-Na')" class="draggable-item px-4 py-2 bg-slate-800 border-2 border-cyan-500/50 rounded-xl font-bold text-cyan-300 text-sm shadow-md hover:scale-105 transition">
+                                Sodium (Na)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DROP TARGET ZONES -->
+                    <div class="space-y-2">
+                        <div class="text-xs font-semibold text-slate-300">Thứ tự giảm dần (Mạnh nhất ➔ Yếu nhất):</div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div ondrop="drop(event)" ondragover="allowDrop(event)" id="metal-slot-1" class="drop-slot h-16 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-xs text-slate-500 font-bold bg-slate-900/40">
+                                1. Mạnh nhất
+                            </div>
+                            <div ondrop="drop(event)" ondragover="allowDrop(event)" id="metal-slot-2" class="drop-slot h-16 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-xs text-slate-500 font-bold bg-slate-900/40">
+                                2. Trung bình
+                            </div>
+                            <div ondrop="drop(event)" ondragover="allowDrop(event)" id="metal-slot-3" class="drop-slot h-16 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-xs text-slate-500 font-bold bg-slate-900/40">
+                                3. Yếu nhất
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="checkMetalOrder()" class="flex-1 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold rounded-xl text-sm transition">
+                            <i class="fa-solid fa-check-double"></i> Kiểm Tra Kết Quả
+                        </button>
+                        <button onclick="resetMetalOrder()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 text-sm font-semibold">
+                            Đặt lại
+                        </button>
+                    </div>
+                    <div id="metal-feedback" class="hidden text-xs p-3 rounded-xl border"></div>
+                </div>
+
+                <!-- DRAG TASK 2: NON-METALLIC TREND -->
+                <div class="glass-panel p-6 rounded-2xl space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-arrow-down-short-wide text-amber-400"></i> Bài 2: Sắp xếp chiều GIẢM DẦN tính PHI KIM
+                        </h3>
+                        <span class="text-xs text-slate-400">Nhóm Halogen</span>
+                    </div>
+
+                    <!-- SOURCE CARDS -->
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+                        <div class="text-xs text-slate-400 mb-2">Thẻ đơn chất khả dụng (Bấm hoặc kéo thả):</div>
+                        <div id="nonmetal-source" class="flex gap-3 justify-center min-h-[50px] items-center">
+                            <div draggable="true" ondragstart="drag(event)" id="card-I2" onclick="moveHalCard('card-I2')" class="draggable-item px-4 py-2 bg-slate-800 border-2 border-amber-500/50 rounded-xl font-bold text-amber-300 text-sm shadow-md hover:scale-105 transition">
+                                Iodine (I₂)
+                            </div>
+                            <div draggable="true" ondragstart="drag(event)" id="card-Cl2" onclick="moveHalCard('card-Cl2')" class="draggable-item px-4 py-2 bg-slate-800 border-2 border-amber-500/50 rounded-xl font-bold text-amber-300 text-sm shadow-md hover:scale-105 transition">
+                                Chlorine (Cl₂)
+                            </div>
+                            <div draggable="true" ondragstart="drag(event)" id="card-Br2" onclick="moveHalCard('card-Br2')" class="draggable-item px-4 py-2 bg-slate-800 border-2 border-amber-500/50 rounded-xl font-bold text-amber-300 text-sm shadow-md hover:scale-105 transition">
+                                Bromine (Br₂)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DROP TARGET ZONES -->
+                    <div class="space-y-2">
+                        <div class="text-xs font-semibold text-slate-300">Thứ tự giảm dần (Mạnh nhất ➔ Yếu nhất):</div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <div ondrop="drop(event)" ondragover="allowDrop(event)" id="hal-slot-1" class="drop-slot h-16 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-xs text-slate-500 font-bold bg-slate-900/40">
+                                1. Mạnh nhất
+                            </div>
+                            <div ondrop="drop(event)" ondragover="allowDrop(event)" id="hal-slot-2" class="drop-slot h-16 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-xs text-slate-500 font-bold bg-slate-900/40">
+                                2. Trung bình
+                            </div>
+                            <div ondrop="drop(event)" ondragover="allowDrop(event)" id="hal-slot-3" class="drop-slot h-16 border-2 border-dashed border-slate-700 rounded-xl flex items-center justify-center text-xs text-slate-500 font-bold bg-slate-900/40">
+                                3. Yếu nhất
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="checkHalOrder()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm transition">
+                            <i class="fa-solid fa-check-double"></i> Kiểm Tra Kết Quả
+                        </button>
+                        <button onclick="resetHalOrder()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 text-sm font-semibold">
+                            Đặt lại
+                        </button>
+                    </div>
+                    <div id="hal-feedback" class="hidden text-xs p-3 rounded-xl border"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="glass-panel border-t border-slate-800 mt-8 py-4 px-4 text-center text-xs text-slate-500">
+        <p>© 2026 VirtualChem 10 - Dự án Phát triển Năng lực Tự học Hóa học - Lớp 10A3 & 10A5 - THPT Lương Thế Vinh</p>
+    </footer>
+
+    <script>
+        /* ==================== GLOBAL APP STATE & AUDIO SYNTHESIZER ==================== */
+        let activeTab = 'exp1';
+        let audioEnabled = true;
+
+        // Audio synthesizer using Web Audio API
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!audioEnabled || audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            if (!audioEnabled) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'bubble') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400 + Math.random() * 300, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'sizzle') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150 + Math.random() * 100, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.2);
+                } else if (type === 'success') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                }
+            } catch (e) {
+                console.log('Audio playback ignored:', e);
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            const btn = document.getElementById('audio-icon');
+            if (audioEnabled) {
+                btn.className = 'fa-solid fa-volume-high text-cyan-400';
+            } else {
+                btn.className = 'fa-solid fa-volume-xmark text-slate-500';
+            }
+        }
+
+        /* ==================== NAVIGATION TAB SWITCHING ==================== */
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.getElementById('tab-exp1').classList.add('hidden');
+            document.getElementById('tab-exp2').classList.add('hidden');
+            document.getElementById('tab-quiz').classList.add('hidden');
+
+            document.getElementById('nav-exp1').className = 'px-4 py-2 rounded-lg transition-all text-slate-400 hover:text-white flex items-center gap-2';
+            document.getElementById('nav-exp2').className = 'px-4 py-2 rounded-lg transition-all text-slate-400 hover:text-white flex items-center gap-2';
+            document.getElementById('nav-quiz').className = 'px-4 py-2 rounded-lg transition-all text-slate-400 hover:text-white flex items-center gap-2';
+
+            if (tabId === 'exp1') {
+                document.getElementById('tab-exp1').classList.remove('hidden');
+                document.getElementById('nav-exp1').className = 'px-4 py-2 rounded-lg transition-all text-cyan-400 bg-slate-800 shadow flex items-center gap-2';
+            } else if (tabId === 'exp2') {
+                document.getElementById('tab-exp2').classList.remove('hidden');
+                document.getElementById('nav-exp2').className = 'px-4 py-2 rounded-lg transition-all text-amber-400 bg-slate-800 shadow flex items-center gap-2';
+                drawDisplacementScene();
+                drawH2Scene();
+            } else if (tabId === 'quiz') {
+                document.getElementById('tab-quiz').classList.remove('hidden');
+                document.getElementById('nav-quiz').className = 'px-4 py-2 rounded-lg transition-all text-emerald-400 bg-slate-800 shadow flex items-center gap-2';
+            }
+        }
+
+        function resetCurrentTab() {
+            if (activeTab === 'exp1') {
+                stopMetalExperiment();
+                selectMetal('Na');
+                updateTemperature(25);
+                document.getElementById('temp-slider').value = 25;
+            } else if (activeTab === 'exp2') {
+                selectHalogen('Cl2');
+                selectSalt('NaBr');
+                drawDisplacementScene();
+            } else {
+                resetMetalOrder();
+                resetHalOrder();
+            }
+        }
+
+        /* ==================== EXPERIMENT 1 LOGIC & CANVA ANIMATION ==================== */
+        let exp1State = {
+            selectedMetal: 'Na',
+            temperature: 25,
+            hasIndicator: true,
+            isRunning: false,
+            time: 0,
+            volumeH2: 0,
+            ph: 7.0,
+            particles: [],
+            bubbles: [],
+            metalPos: { x: 240, y: 120, vx: 0, vy: 0 },
+            waterColor: { r: 56, g: 189, b: 248, a: 0.25 } // default liquid
+        };
+
+        const canvasExp1 = document.getElementById('beakerCanvas');
+        const ctxExp1 = canvasExp1.getContext('2d');
+
+        // Chart.js initialization for H2 volume sensor
+        const ctxChart1 = document.getElementById('chart-exp1').getContext('2d');
+        let chartExp1 = new Chart(ctxChart1, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Thể tích H₂ (mL)',
+                    data: [],
+                    borderColor: '#06b6d4',
+                    backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: { display: true, title: { display: true, text: 'Thời gian (s)', color: '#64748b' }, ticks: { color: '#64748b' } },
+                    y: { display: true, min: 0, max: 100, title: { display: true, text: 'V_H2 (mL)', color: '#64748b' }, ticks: { color: '#64748b' } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        function selectMetal(metal) {
+            exp1State.selectedMetal = metal;
+            document.querySelectorAll('.metal-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-cyan-400', 'bg-slate-700'));
+            document.getElementById(`btn-metal-${metal}`).classList.add('ring-2', 'ring-cyan-400', 'bg-slate-700');
+
+            document.getElementById('status-metal').innerText = metal === 'Na' ? 'Sodium (Na)' : (metal === 'Mg' ? 'Magnesium (Mg)' : 'Nhôm (Al)');
+            updateMetalDetails();
+            resetExp1Metrics();
+        }
+
+        function updateTemperature(val) {
+            exp1State.temperature = parseInt(val);
+            document.getElementById('temp-display').innerText = val + ' °C';
+            if (exp1State.selectedMetal === 'Mg' && exp1State.isRunning) {
+                updateMetalDetails();
+            }
+        }
+
+        function toggleIndicator(checked) {
+            exp1State.hasIndicator = checked;
+            if (!checked) {
+                exp1State.waterColor = { r: 56, g: 189, b: 248, a: 0.25 };
+            } else if (exp1State.ph > 7) {
+                // Adjust magenta depth based on pH
+                const opacity = Math.min(0.8, (exp1State.ph - 7) / 7);
+                exp1State.waterColor = { r: 236, g: 72, b: 153, a: opacity };
+            }
+        }
+
+        function resetExp1Metrics() {
+            exp1State.time = 0;
+            exp1State.volumeH2 = 0;
+            exp1State.ph = 7.0;
+            exp1State.bubbles = [];
+            exp1State.waterColor = { r: 56, g: 189, b: 248, a: 0.25 };
+            exp1State.metalPos = { x: 240, y: 120, vx: 0, vy: 0 };
+
+            chartExp1.data.labels = [];
+            chartExp1.data.datasets[0].data = [];
+            chartExp1.update();
+
+            document.getElementById('ph-value').innerText = '7.0';
+            document.getElementById('ph-indicator').style.backgroundColor = '#94a3b8';
+            document.getElementById('sensor-vol').innerText = '0.00 mL';
+            document.getElementById('sensor-rate').innerText = '0.0 mL/s';
+            document.getElementById('status-rxn').innerText = 'Chờ bắt đầu...';
+            document.getElementById('pop-explanation').classList.add('hidden');
+        }
+
+        function updateMetalDetails() {
+            const eqBox = document.getElementById('equation-exp1');
+            const detailBox = document.getElementById('detail-exp1');
+
+            if (exp1State.selectedMetal === 'Na') {
+                eqBox.innerHTML = `2Na + 2H₂O → 2NaOH + H₂↑`;
+                detailBox.innerText = `Phản ứng xảy ra mãnh liệt ngay ở 25°C. Na nóng chảy thành viên tròn chạy trên mặt nước. NaOH sinh ra làm phenolphthalein hóa hồng đậm. (Tính kim loại rất mạnh).`;
+            } else if (exp1State.selectedMetal === 'Mg') {
+                if (exp1State.temperature < 70) {
+                    eqBox.innerHTML = `Mg + 2H₂O (lạnh) → Phản ứng rất chậm / không đáng kể`;
+                    detailBox.innerText = `Ở nhiệt độ thường (25°C), Mg phản ứng cực kỳ chậm với nước, chỉ thấy rất ít bọt khí bám quanh mẩu kim loại.`;
+                } else {
+                    eqBox.innerHTML = `Mg + 2H₂O ―(t°)→ Mg(OH)₂↓ + H₂↑`;
+                    detailBox.innerText = `Khi đun nóng (≥80°C), Mg phản ứng nhanh hơn với nước, bọt khí H₂ thoát ra rõ rệt, dung dịch hóa hồng nhẹ do Mg(OH)₂ kiềm yếu.`;
+                }
+            } else if (exp1State.selectedMetal === 'Al') {
+                eqBox.innerHTML = `Al + H₂O → Không phản ứng (Lớp màng Al₂O₃ bảo vệ)`;
+                detailBox.innerText = `Nhôm không phản ứng với nước kể cả khi đun sôi do có lớp màng oxide Al₂O₃ siêu bền bảo vệ bề mặt ngăn tiếp xúc.`;
+            }
+        }
+
+        function startMetalExperiment() {
+            resetExp1Metrics();
+            exp1State.isRunning = true;
+            document.getElementById('status-rxn').innerText = 'Đang phản ứng...';
+            document.getElementById('pop-explanation').classList.remove('hidden');
+
+            const title = document.getElementById('pop-title');
+            const text = document.getElementById('pop-text');
+
+            if (exp1State.selectedMetal === 'Na') {
+                title.innerText = 'Hiện Tượng Quan Sát (Sodium):';
+                text.innerText = 'Mẩu Na nóng chảy thành viên tròn xoay nhanh trên mặt nước, có khí H₂ thoát ra mãnh liệt. Phenolphthalein chuyển màu hồng đậm lập tức!';
+            } else if (exp1State.selectedMetal === 'Mg') {
+                title.innerText = `Hiện Tượng Quan Sát (Magnesium ở ${exp1State.temperature}°C):`;
+                if (exp1State.temperature >= 70) {
+                    text.innerText = 'Đun nóng giúp phá vỡ màng hydroxide, bọt khí H₂ thoát ra khá nhanh, dung dịch chuyển sang màu hồng nhạt.';
+                } else {
+                    text.innerText = 'Ở nhiệt độ thường, chỉ thấy bọt khí nhỏ li ti bám trên bề mặt mẩu Mg. Phản ứng diễn ra cực kỳ chậm.';
+                }
+            } else {
+                title.innerText = 'Hiện Tượng Quan Sát (Nhôm):';
+                text.innerText = 'Không có hiện tượng gì xảy ra! Lớp màng Al₂O₃ bảo vệ cực kỳ bền vững ngăn Nhôm tác dụng với nước.';
+            }
+        }
+
+        function stopMetalExperiment() {
+            exp1State.isRunning = false;
+            document.getElementById('status-rxn').innerText = 'Đã tạm dừng';
+        }
+
+        // Main animation loop for Experiment 1
+        function animateExp1() {
+            ctxExp1.clearRect(0, 0, canvasExp1.width, canvasExp1.height);
+
+            // 1. Draw Beaker Container
+            ctxExp1.save();
+            ctxExp1.lineWidth = 4;
+            ctxExp1.strokeStyle = '#64748b';
+            ctxExp1.fillStyle = 'rgba(15, 23, 42, 0.4)';
+
+            // Beaker shape
+            ctxExp1.beginPath();
+            ctxExp1.moveTo(120, 60);
+            ctxExp1.lineTo(120, 270);
+            ctxExp1.arcTo(120, 280, 130, 280, 10);
+            ctxExp1.lineTo(350, 280);
+            ctxExp1.arcTo(360, 280, 360, 270, 10);
+            ctxExp1.lineTo(360, 60);
+            ctxExp1.stroke();
+            ctxExp1.fill();
+
+            // Beaker scale marks
+            ctxExp1.strokeStyle = '#475569';
+            ctxExp1.lineWidth = 2;
+            for (let y = 100; y <= 240; y += 30) {
+                ctxExp1.beginPath();
+                ctxExp1.moveTo(340, y);
+                ctxExp1.lineTo(355, y);
+                ctxExp1.stroke();
+            }
+
+            // 2. Draw Liquid inside beaker
+            const liquidTop = 130;
+            const liquidHeight = 145;
+
+            // Liquid fill with dynamic pH color
+            ctxExp1.fillStyle = `rgba(${exp1State.waterColor.r}, ${exp1State.waterColor.g}, ${exp1State.waterColor.b}, ${exp1State.waterColor.a})`;
+            ctxExp1.fillRect(122, liquidTop, 236, liquidHeight);
+
+            // Water surface line
+            ctxExp1.beginPath();
+            ctxExp1.moveTo(122, liquidTop);
+            ctxExp1.quadraticCurveTo(240, liquidTop + 4, 358, liquidTop);
+            ctxExp1.strokeStyle = 'rgba(255,255,255,0.4)';
+            ctxExp1.lineWidth = 2;
+            ctxExp1.stroke();
+
+            // Heat waves if temp > 50°C
+            if (exp1State.temperature >= 50) {
+                ctxExp1.strokeStyle = 'rgba(251, 146, 60, 0.3)';
+                ctxExp1.lineWidth = 2;
+                for (let i = 0; i < 3; i++) {
+                    const x = 160 + i * 80;
+                    ctxExp1.beginPath();
+                    ctxExp1.moveTo(x, 290);
+                    ctxExp1.lineTo(x + Math.sin(Date.now() / 200 + i) * 5, 282);
+                    ctxExp1.stroke();
+                }
+            }
+
+            // 3. Reaction simulation & Physics updates
+            if (exp1State.isRunning) {
+                exp1State.time += 0.05;
+
+                let rxnRate = 0; // mL per second
+                if (exp1State.selectedMetal === 'Na') {
+                    rxnRate = 8.5; // Rapid
+                } else if (exp1State.selectedMetal === 'Mg') {
+                    rxnRate = exp1State.temperature >= 70 ? 2.2 : 0.15; // Fast when heated, very slow cold
+                } else {
+                    rxnRate = 0; // Inert
+                }
+
+                if (rxnRate > 0 && exp1State.volumeH2 < 100) {
+                    exp1State.volumeH2 += (rxnRate * 0.05);
+                    // Increase pH towards basic
+                    const targetPH = exp1State.selectedMetal === 'Na' ? 13.0 : 9.5;
+                    exp1State.ph = Math.min(targetPH, 7.0 + (exp1State.volumeH2 / 100) * (targetPH - 7.0));
+
+                    // Color transition if indicator active
+                    if (exp1State.hasIndicator) {
+                        const pinkIntensity = Math.min(0.85, (exp1State.ph - 7) / 6);
+                        exp1State.waterColor = { r: 236, g: 72, b: 153, a: pinkIntensity };
+                    }
+
+                    // Sound effect
+                    if (Math.random() < 0.3) playSound('bubble');
+
+                    // Spawn H2 Bubbles
+                    const bubbleCount = Math.ceil(rxnRate * 0.8);
+                    for (let i = 0; i < bubbleCount; i++) {
+                        exp1State.bubbles.push({
+                            x: exp1State.metalPos.x + (Math.random() - 0.5) * 20,
+                            y: exp1State.metalPos.y,
+                            r: Math.random() * 3 + 1.5,
+                            vy: Math.random() * 2 + 1.5,
+                            vx: (Math.random() - 0.5) * 1
+                        });
+                    }
+                }
+
+                // Update Sensor Readings & Chart
+                document.getElementById('sensor-vol').innerText = exp1State.volumeH2.toFixed(2) + ' mL';
+                document.getElementById('sensor-rate').innerText = rxnRate.toFixed(1) + ' mL/s';
+                document.getElementById('ph-value').innerText = exp1State.ph.toFixed(1);
+
+                if (exp1State.ph > 7.5) {
+                    document.getElementById('ph-indicator').style.backgroundColor = '#ec4899';
+                }
+
+                if (Math.floor(exp1State.time * 20) % 5 === 0 && chartExp1.data.labels.length < 40) {
+                    chartExp1.data.labels.push(exp1State.time.toFixed(1));
+                    chartExp1.data.datasets[0].data.push(exp1State.volumeH2);
+                    chartExp1.update();
+                }
+
+                // Metal Movement physics
+                if (exp1State.selectedMetal === 'Na') {
+                    // Floating Na dances rapidly on liquid surface
+                    exp1State.metalPos.y = liquidTop + 4;
+                    exp1State.metalPos.vx += (Math.random() - 0.5) * 2;
+                    exp1State.metalPos.x += exp1State.metalPos.vx;
+                    exp1State.metalPos.vx *= 0.9;
+
+                    if (exp1State.metalPos.x < 140) exp1State.metalPos.x = 140;
+                    if (exp1State.metalPos.x > 340) exp1State.metalPos.x = 340;
+                } else {
+                    // Mg and Al sink to bottom
+                    if (exp1State.metalPos.y < 270) {
+                        exp1State.metalPos.y += 3;
+                    } else {
+                        exp1State.metalPos.y = 270;
+                    }
+                }
+            }
+
+            // 4. Render Bubbles
+            for (let i = exp1State.bubbles.length - 1; i >= 0; i--) {
+                const b = exp1State.bubbles[i];
+                b.y -= b.vy;
+                b.x += b.vx;
+
+                ctxExp1.beginPath();
+                ctxExp1.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                ctxExp1.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctxExp1.fill();
+                ctxExp1.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+                ctxExp1.stroke();
+
+                if (b.y < liquidTop) {
+                    exp1State.bubbles.splice(i, 1);
+                }
+            }
+
+            // 5. Render Metal Chunk
+            ctxExp1.save();
+            ctxExp1.translate(exp1State.metalPos.x, exp1State.metalPos.y);
+
+            if (exp1State.selectedMetal === 'Na') {
+                // Na melts into shiny silver sphere on water
+                ctxExp1.beginPath();
+                ctxExp1.arc(0, 0, 10, 0, Math.PI * 2);
+                const grad = ctxExp1.createRadialGradient(-3, -3, 2, 0, 0, 10);
+                grad.addColorStop(0, '#fef08a');
+                grad.addColorStop(0.5, '#f59e0b');
+                grad.addColorStop(1, '#78350f');
+                ctxExp1.fillStyle = grad;
+                ctxExp1.fill();
+                ctxExp1.strokeStyle = '#fbbf24';
+                ctxExp1.stroke();
+            } else if (exp1State.selectedMetal === 'Mg') {
+                // Mg strip
+                ctxExp1.fillStyle = '#cbd5e1';
+                ctxExp1.fillRect(-12, -4, 24, 8);
+                ctxExp1.strokeStyle = '#94a3b8';
+                ctxExp1.strokeRect(-12, -4, 24, 8);
+            } else {
+                // Al foil pellet
+                ctxExp1.fillStyle = '#94a3b8';
+                ctxExp1.beginPath();
+                ctxExp1.arc(0, 0, 9, 0, Math.PI * 2);
+                ctxExp1.fill();
+                ctxExp1.strokeStyle = '#64748b';
+                ctxExp1.stroke();
+            }
+            ctxExp1.restore();
+
+            ctxExp1.restore();
+            requestAnimationFrame(animateExp1);
+        }
+
+        /* ==================== EXPERIMENT 2 LOGIC & ANIMATION ==================== */
+        let exp2State = {
+            subTab: 'displacement',
+            selectedHalogen: 'Cl2',
+            selectedSalt: 'NaBr',
+            selectedH2Hal: 'Cl2',
+            displacementColor: 'transparent',
+            isAnimatingH2: false,
+            h2Progress: 0
+        };
+
+        const canvasExp2a = document.getElementById('displacementCanvas');
+        const ctxExp2a = canvasExp2a.getContext('2d');
+
+        const canvasExp2b = document.getElementById('h2Canvas');
+        const ctxExp2b = canvasExp2b.getContext('2d');
+
+        function switchNonMetalSubTab(type) {
+            exp2State.subTab = type;
+            document.getElementById('subview-displacement').classList.add('hidden');
+            document.getElementById('subview-hydrogen').classList.add('hidden');
+
+            document.getElementById('subtab-displacement').className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition';
+            document.getElementById('subtab-hydrogen').className = 'px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition';
+
+            if (type === 'displacement') {
+                document.getElementById('subview-displacement').classList.remove('hidden');
+                document.getElementById('subtab-displacement').className = 'px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold transition';
+                drawDisplacementScene();
+            } else {
+                document.getElementById('subview-hydrogen').classList.remove('hidden');
+                document.getElementById('subtab-hydrogen').className = 'px-3 py-1.5 rounded-lg bg-cyan-500 text-slate-950 font-bold transition';
+                drawH2Scene();
+            }
+        }
+
+        function selectHalogen(hal) {
+            exp2State.selectedHalogen = hal;
+            document.querySelectorAll('.hal-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-amber-500', 'bg-slate-700'));
+            document.getElementById(`btn-hal-${hal}`).classList.add('ring-2', 'ring-amber-500', 'bg-slate-700');
+        }
+
+        function selectSalt(salt) {
+            exp2State.selectedSalt = salt;
+            document.querySelectorAll('.salt-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-amber-500', 'bg-slate-700'));
+            document.getElementById(`btn-salt-${salt}`).classList.add('ring-2', 'ring-amber-500', 'bg-slate-700');
+        }
+
+        function runDisplacementExp() {
+            const hal = exp2State.selectedHalogen;
+            const salt = exp2State.selectedSalt;
+
+            const eq = document.getElementById('exp2a-eq');
+            const pop = document.getElementById('pop-exp2a');
+            const title = document.getElementById('exp2a-title');
+            const desc = document.getElementById('exp2a-desc');
+
+            pop.classList.remove('hidden');
+            playSound('bubble');
+
+            // Displacement Rules: Cl2 > Br2 > I2
+            if (hal === 'Cl2' && salt === 'NaBr') {
+                exp2State.displacementColor = 'rgba(245, 158, 11, 0.7)'; // Orange Br2
+                eq.innerText = 'Cl₂ + 2NaBr → 2NaCl + Br₂';
+                title.innerText = 'Phản ứng xảy ra!';
+                desc.innerText = 'Clo đẩy Brom ra khỏi muối NaBr. Dung dịch chuyển từ không màu sang màu vàng cam của Brom (Br₂) tự do.';
+            } else if (hal === 'Cl2' && salt === 'NaI') {
+                exp2State.displacementColor = 'rgba(147, 51, 234, 0.8)'; // Purple I2
+                eq.innerText = 'Cl₂ + 2NaI → 2NaCl + I₂';
+                title.innerText = 'Phản ứng xảy ra mãnh liệt!';
+                desc.innerText = 'Clo đẩy Iốt ra khỏi muối NaI. Dung dịch chuyển sang màu nâu đỏ / tím đen của Iốt (I₂).';
+            } else if (hal === 'Br2' && salt === 'NaI') {
+                exp2State.displacementColor = 'rgba(147, 51, 234, 0.8)'; // Purple I2
+                eq.innerText = 'Br₂ + 2NaI → 2NaBr + I₂';
+                title.innerText = 'Phản ứng xảy ra!';
+                desc.innerText = 'Brom đẩy Iốt ra khỏi muối NaI do tính phi kim của Brom mạnh hơn Iốt (Br > I).';
+            } else {
+                // No reaction
+                exp2State.displacementColor = 'rgba(226, 232, 240, 0.2)'; // Clear
+                eq.innerText = `${hal} + ${salt} → Không phản ứng`;
+                title.innerText = 'Không xảy ra phản ứng!';
+                desc.innerText = `Phi kim ${hal} có tính phi kim yếu hơn hoặc tương đương nên không thể đẩy Halogenid ra khỏi muối.`;
+            }
+
+            drawDisplacementScene();
+        }
+
+        function drawDisplacementScene() {
+            ctxExp2a.clearRect(0, 0, canvasExp2a.width, canvasExp2a.height);
+
+            // Draw Test Tube Rack
+            ctxExp2a.fillStyle = '#334155';
+            ctxExp2a.fillRect(150, 250, 200, 20);
+
+            // Test Tube
+            ctxExp2a.save();
+            ctxExp2a.strokeStyle = '#94a3b8';
+            ctxExp2a.lineWidth = 3;
+            ctxExp2a.beginPath();
+            ctxExp2a.moveTo(210, 80);
+            ctxExp2a.lineTo(210, 230);
+            ctxExp2a.arc(235, 230, 25, Math.PI, 0, true);
+            ctxExp2a.lineTo(260, 80);
+            ctxExp2a.stroke();
+
+            // Solution Liquid inside test tube
+            ctxExp2a.fillStyle = exp2State.displacementColor || 'rgba(226, 232, 240, 0.2)';
+            ctxExp2a.beginPath();
+            ctxExp2a.moveTo(212, 140);
+            ctxExp2a.lineTo(212, 230);
+            ctxExp2a.arc(235, 230, 23, Math.PI, 0, true);
+            ctxExp2a.lineTo(258, 140);
+            ctxExp2a.closePath();
+            ctxExp2a.fill();
+
+            // Label text on test tube
+            ctxExp2a.fillStyle = '#f8fafc';
+            ctxExp2a.font = 'bold 12px Inter';
+            ctxExp2a.textAlign = 'center';
+            ctxExp2a.fillText(`${exp2State.selectedHalogen} + ${exp2State.selectedSalt}`, 235, 180);
+
+            ctxExp2a.restore();
+        }
+
+        function selectH2Halogen(hal) {
+            exp2State.selectedH2Hal = hal;
+            document.querySelectorAll('.h2-hal-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-cyan-400', 'bg-slate-700'));
+            document.getElementById(`btn-h2-${hal}`).classList.add('ring-2', 'ring-cyan-400', 'bg-slate-700');
+
+            const eqDisp = document.getElementById('h2-eq-display');
+            const descDisp = document.getElementById('h2-desc-display');
+
+            if (hal === 'Cl2') {
+                eqDisp.innerText = 'H₂ + Cl₂ ―(ánh sáng)→ 2HCl (Nổ mạnh trong ánh sáng)';
+                descDisp.innerText = 'Phản ứng giữa H₂ và Cl₂ diễn ra rất nhanh, tỏa nhiều nhiệt và gây nổ ngay trong ánh sáng khuếch tán ở nhiệt độ phòng.';
+            } else if (hal === 'Br2') {
+                eqDisp.innerText = 'H₂ + Br₂ ―(300-400°C)→ 2HBr (Cần đun nóng)';
+                descDisp.innerText = 'Brom chỉ phản ứng với H₂ khi đun nóng ở nhiệt độ 300 - 400°C, phản ứng không gây nổ và tỏa ít nhiệt hơn Clo.';
+            } else {
+                eqDisp.innerText = 'H₂ + I₂ ⇄ 2HI (350-500°C, xúc tác Pt, Thuận nghịch)';
+                descDisp.innerText = 'Iốt phản ứng với H₂ ở nhiệt độ rất cao và là phản ứng thuận nghịch hai chiều, chứng tỏ Cl₂ > Br₂ > I₂ về tính phi kim.';
+            }
+            drawH2Scene();
+        }
+
+        function runH2Reaction() {
+            exp2State.isAnimatingH2 = true;
+            exp2State.h2Progress = 0;
+            if (exp2State.selectedH2Hal === 'Cl2') playSound('sizzle');
+            animateH2Reaction();
+        }
+
+        function animateH2Reaction() {
+            if (!exp2State.isAnimatingH2) return;
+
+            exp2State.h2Progress += 0.05;
+            drawH2Scene(exp2State.h2Progress);
+
+            if (exp2State.h2Progress < 1) {
+                requestAnimationFrame(animateH2Reaction);
+            } else {
+                exp2State.isAnimatingH2 = false;
+            }
+        }
+
+        function drawH2Scene(progress = 0) {
+            ctxExp2b.clearRect(0, 0, canvasExp2b.width, canvasExp2b.height);
+
+            // Gas Cylinder 1 (H2)
+            ctxExp2b.fillStyle = '#38bdf8';
+            ctxExp2b.fillRect(100, 100, 70, 150);
+            ctxExp2b.fillStyle = '#f8fafc';
+            ctxExp2b.font = 'bold 16px Inter';
+            ctxExp2b.fillText('H₂', 125, 180);
+
+            // Gas Cylinder 2 (Halogen)
+            const halColor = exp2State.selectedH2Hal === 'Cl2' ? '#fef08a' : (exp2State.selectedH2Hal === 'Br2' ? '#d97706' : '#a855f7');
+            ctxExp2b.fillStyle = halColor;
+            ctxExp2b.fillRect(330, 100, 70, 150);
+            ctxExp2b.fillStyle = '#0f172a';
+            ctxExp2b.fillText(exp2State.selectedH2Hal, 350, 180);
+
+            // Connecting Chamber
+            ctxExp2b.fillStyle = 'rgba(30, 41, 59, 0.8)';
+            ctxExp2b.fillRect(170, 150, 160, 50);
+
+            // Explosive / Flame Flash effect on active reaction
+            if (progress > 0) {
+                ctxExp2b.save();
+                if (exp2State.selectedH2Hal === 'Cl2') {
+                    // Flash explosion
+                    ctxExp2b.fillStyle = `rgba(239, 68, 68, ${Math.sin(progress * Math.PI)})`;
+                    ctxExp2b.beginPath();
+                    ctxExp2b.arc(250, 175, 45 * progress, 0, Math.PI * 2);
+                    ctxExp2b.fill();
+                    ctxExp2b.fillStyle = '#ffffff';
+                    ctxExp2b.fillText('💥 NỔ!', 235, 180);
+                } else if (exp2State.selectedH2Hal === 'Br2') {
+                    // Heat glow
+                    ctxExp2b.fillStyle = `rgba(245, 158, 11, ${progress * 0.7})`;
+                    ctxExp2b.fillRect(170, 150, 160, 50);
+                    ctxExp2b.fillStyle = '#ffffff';
+                    ctxExp2b.fillText('🔥 Đun nóng', 220, 180);
+                } else {
+                    // Equilibrium arrows
+                    ctxExp2b.fillStyle = `rgba(168, 85, 247, ${progress * 0.7})`;
+                    ctxExp2b.fillRect(170, 150, 160, 50);
+                    ctxExp2b.fillStyle = '#ffffff';
+                    ctxExp2b.fillText('⇄ Thuận nghịch', 205, 180);
+                }
+                ctxExp2b.restore();
+            }
+        }
+
+        /* ==================== INTERACTIVE DRAG & DROP QUIZ LOGIC ==================== */
+        let draggedElementId = null;
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            draggedElementId = ev.target.id;
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text") || draggedElementId;
+            const card = document.getElementById(data);
+
+            let targetSlot = ev.target;
+            if (!targetSlot.classList.contains('drop-slot')) {
+                targetSlot = targetSlot.closest('.drop-slot');
+            }
+
+            if (targetSlot) {
+                targetSlot.appendChild(card);
+                playSound('bubble');
+            }
+        }
+
+        // Tap/click fallback for mobile accessibility
+        function moveCard(cardId) {
+            const card = document.getElementById(cardId);
+            const slots = ['metal-slot-1', 'metal-slot-2', 'metal-slot-3'];
+
+            for (let id of slots) {
+                const slot = document.getElementById(id);
+                if (slot.children.length === 0 || slot.children[0].nodeType === 3) {
+                    slot.innerText = '';
+                    slot.appendChild(card);
+                    playSound('bubble');
+                    break;
+                }
+            }
+        }
+
+        function moveHalCard(cardId) {
+            const card = document.getElementById(cardId);
+            const slots = ['hal-slot-1', 'hal-slot-2', 'hal-slot-3'];
+
+            for (let id of slots) {
+                const slot = document.getElementById(id);
+                if (slot.children.length === 0 || slot.children[0].nodeType === 3) {
+                    slot.innerText = '';
+                    slot.appendChild(card);
+                    playSound('bubble');
+                    break;
+                }
+            }
+        }
+
+        function checkMetalOrder() {
+            const slot1 = document.getElementById('metal-slot-1').firstElementChild?.id;
+            const slot2 = document.getElementById('metal-slot-2').firstElementChild?.id;
+            const slot3 = document.getElementById('metal-slot-3').firstElementChild?.id;
+
+            const feedback = document.getElementById('metal-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-950/80', 'border-emerald-500', 'bg-red-950/80', 'border-red-500');
+
+            if (slot1 === 'card-Na' && slot2 === 'card-Mg' && slot3 === 'card-Al') {
+                feedback.classList.add('bg-emerald-950/80', 'border-emerald-500', 'text-emerald-300');
+                feedback.innerHTML = `<strong> chính xác! 🎉</strong><br>Trong cùng Chu kỳ 3, theo chiều tăng điện tích hạt nhân (Z), tính kim loại GIẢM DẦN: <strong>Na > Mg > Al</strong>.`;
+                playSound('success');
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+            } else {
+                feedback.classList.add('bg-red-950/80', 'border-red-500', 'text-red-300');
+                feedback.innerHTML = `<strong> Chưa đúng rồi!</strong> Hãy nhớ lại mức độ phản ứng với nước: Na phản ứng mãnh liệt nhất, Mg phản ứng khi đun nóng, Al không phản ứng. Bấm "Đặt lại" để làm lại.`;
+            }
+        }
+
+        function resetMetalOrder() {
+            const source = document.getElementById('metal-source');
+            source.appendChild(document.getElementById('card-Mg'));
+            source.appendChild(document.getElementById('card-Al'));
+            source.appendChild(document.getElementById('card-Na'));
+
+            document.getElementById('metal-slot-1').innerText = '1. Mạnh nhất';
+            document.getElementById('metal-slot-2').innerText = '2. Trung bình';
+            document.getElementById('metal-slot-3').innerText = '3. Yếu nhất';
+            document.getElementById('metal-feedback').classList.add('hidden');
+        }
+
+        function checkHalOrder() {
+            const slot1 = document.getElementById('hal-slot-1').firstElementChild?.id;
+            const slot2 = document.getElementById('hal-slot-2').firstElementChild?.id;
+            const slot3 = document.getElementById('hal-slot-3').firstElementChild?.id;
+
+            const feedback = document.getElementById('hal-feedback');
+            feedback.classList.remove('hidden', 'bg-emerald-950/80', 'border-emerald-500', 'bg-red-950/80', 'border-red-500');
+
+            if (slot1 === 'card-Cl2' && slot2 === 'card-Br2' && slot3 === 'card-I2') {
+                feedback.classList.add('bg-emerald-950/80', 'border-emerald-500', 'text-emerald-300');
+                feedback.innerHTML = `<strong> chính xác! 🎉</strong><br>Trong nhóm Halogen (VIIA), từ trên xuống dưới tính phi kim GIẢM DẦN: <strong>Cl₂ > Br₂ > I₂</strong>.`;
+                playSound('success');
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+            } else {
+                feedback.classList.add('bg-red-950/80', 'border-red-500', 'text-red-300');
+                feedback.innerHTML = `<strong> Chưa đúng!</strong> Clo đẩy được Brom, Brom đẩy được Iốt. Do đó tính phi kim giảm dần từ Cl₂ ➔ Br₂ ➔ I₂.`;
+            }
+        }
+
+        function resetHalOrder() {
+            const source = document.getElementById('nonmetal-source');
+            source.appendChild(document.getElementById('card-I2'));
+            source.appendChild(document.getElementById('card-Cl2'));
+            source.appendChild(document.getElementById('card-Br2'));
+
+            document.getElementById('hal-slot-1').innerText = '1. Mạnh nhất';
+            document.getElementById('hal-slot-2').innerText = '2. Trung bình';
+            document.getElementById('hal-slot-3').innerText = '3. Yếu nhất';
+            document.getElementById('hal-feedback').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            selectMetal('Na');
+            selectHalogen('Cl2');
+            selectSalt('NaBr');
+            selectH2Halogen('Cl2');
+            animateExp1();
+        };
+    </script>
+</body>
+</html>
